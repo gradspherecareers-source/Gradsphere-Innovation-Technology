@@ -70,6 +70,24 @@ def login_required(view):
     return wrapped
 
 
+def send_sms(message_text):
+    """Helper function to send SMS via Fast2SMS"""
+    try:
+        url = "https://www.fast2sms.com/dev/bulkV2"
+        querystring = {
+            "authorization": "YOUR_FAST2SMS_API_KEY",  # <--- Put your Fast2SMS API key here
+            "route": "q",
+            "message": message_text,
+            "language": "english",
+            "flash": "0",
+            "numbers": "918072806231"  # Your phone number
+        }
+        headers = {'cache-control': "no-cache"}
+        requests.request("GET", url, headers=headers, params=querystring)
+    except Exception as e:
+        print(f"SMS error: {e}")
+
+
 # ------------------------- PUBLIC PAGES -------------------------
 @app.route("/")
 def home():
@@ -109,7 +127,7 @@ def contact():
             )
             db.commit()
 
-            # 2. Send Email Notification to your Inbox via Python (SMTP)
+            # 2. Send Email Notification to Inbox
             try:
                 msg = EmailMessage()
                 msg.set_content(
@@ -122,7 +140,7 @@ def contact():
                 )
                 msg["Subject"] = f"New Inquiry: {name} ({email})"
                 msg["From"] = "gradspherecareers@gmail.com"
-                msg["Reply-To"] = email  # Clicking 'Reply' in Gmail replies to the client
+                msg["Reply-To"] = email
                 msg["To"] = "gradspherecareers@gmail.com"
 
                 with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -131,24 +149,8 @@ def contact():
             except Exception as e:
                 print(f"Email error: {e}")
 
-            # 3. Send WhatsApp Notification via Python (CallMeBot API)
-            try:
-                whatsapp_number = "918072806231"  
-                api_key = "YOUR_CALLMEBOT_API_KEY"  # <--- Change this if using WhatsApp
-                
-                whatsapp_text = (
-                    f"🚨 *New GradSphere Inquiry*%0A%0A"
-                    f"*Name:* {name}%0A"
-                    f"*Email:* {email}%0A"
-                    f"*Phone:* {phone}%0A"
-                    f"*Service:* {service}%0A%0A"
-                    f"*Message:* {message_body}"
-                )
-                
-                wa_url = f"https://api.callmebot.com/whatsapp.php?phone={whatsapp_number}&text={whatsapp_text}&apikey={api_key}"
-                requests.get(wa_url)
-            except Exception as e:
-                print(f"WhatsApp error: {e}")
+            # 3. Send SMS Alert to Phone
+            send_sms(f"New Inquiry! Name: {name}, Service: {service}")
 
             flash("Thank you! We have received your message and will reply soon.", "success")
             return redirect(url_for("contact"))
@@ -186,7 +188,7 @@ def login():
         if user and check_password_hash(user["password"], request.form.get("password", "")):
             session["user_id"], session["user_name"] = user["id"], user["name"]
             
-            # Send Email Notification for Successful Login
+            # 1. Send Email Notification for Login
             try:
                 msg = EmailMessage()
                 msg.set_content(
@@ -204,6 +206,9 @@ def login():
                     server.send_message(msg)
             except Exception as e:
                 print(f"Login Email error: {e}")
+
+            # 2. Send SMS Alert for Login
+            send_sms(f"Login Alert: {user['name']} ({user['email']}) logged in.")
 
             return redirect(url_for("dashboard"))
             
@@ -226,6 +231,6 @@ def logout():
 
 init_db()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
