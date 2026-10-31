@@ -12,7 +12,15 @@
     <div class="info"><div>🌐</div><p><b>Website</b><br>{{ site.website }}</p></div>
     <div class="info"><div>📍</div><p><b>Address</b><br>{{ site.address }}</p></div>
     <div class="info"><div>🕒</div><p><b>Working Hours</b><br>{{ site.hours }}</p></div>
+
+    <!-- WhatsApp Community Widget Card -->
+    <div class="card" style="margin-top: 24px; padding: 24px; background: var(--sage-light); border-left: 4px solid var(--sage);">
+      <h3 style="font-size: 18px; color: var(--navy); margin-bottom: 8px;">💬 Join Our Community</h3>
+      <p style="font-size: 14.5px; color: var(--muted); margin-bottom: 14px;">Connect with peers and experts. Click the link or scan the QR code below to join our official WhatsApp group instantly.</p>
+      <a href="https://chat.whatsapp.com/ED3cze5Uow4GH9K9fxiK3I?s=sh&p=a&mlu=4&ilr=4" target="_blank" class="btn" style="padding: 10px 24px; font-size: 14px;">Join WhatsApp Group</a>
+    </div>
   </div>
+
   <form method="post" class="card form">
     <h3>Send us a message</h3>
     <input name="name" placeholder="Your Name *" required>
@@ -21,12 +29,8 @@
     
     <select name="service">
       <option value="">Select a service</option>
-      <!-- Added spacing / explicit option for Careers -->
-      <option value="careers">Careers - Stand out to recruiters with polished, ATS-friendly career material</option>
       {% for s in services %}
-        {% if s.title != "Careers" %}
-          <option value="{{ s.title }}">{{ s.title }}</option>
-        {% endif %}
+        <option value="{{ s.title }}">{{ s.title }}</option>
       {% endfor %}
     </select>
 
