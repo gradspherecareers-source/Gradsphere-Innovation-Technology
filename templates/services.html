@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Services{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><h1>Our Services</h1><p>Home / Services</p></div></section>
+
+{% for s in services %}
+<section class="section {{ 'alt' if loop.index is even }}" id="{{ s.id }}">
+  <div class="container two-col">
+    <div class="service-content">
+      <div class="icon">{{ s.icon }}</div>
+      <h2>{{ s.title }}</h2>
+      <p>{{ s.desc }}</p>
+
+      {% if s.id == 'careers' or s.title == 'Careers' %}
+      <p class="career-tagline">Stand out to recruiters with polished, ATS-friendly career material.</p>
+      {% endif %}
+
+      <a href="{{ url_for('contact') }}" class="btn">Request this Service</a>
+    </div>
+    <div class="card">
+      <ul class="ticks big">
+        {% for i in s.points %}<li>{{ i }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+{% endfor %}
+
+<section class="section"><div class="container">
+  <div class="heading"><h2>Why Choose GradSphere?</h2></div>
+  <div class="grid-4">{% for w in why %}<div class="card center"><div class="icon">{{ w.icon }}</div><h3>{{ w.title }}</h3><p>{{ w.text }}</p></div>{% endfor %}</div>
+</div></section>
+
+<section class="cta"><div class="container"><h2>Need something custom?</h2><p>Tell us your requirement and we will build it.</p>
+  <a href="{{ url_for('contact') }}" class="btn btn-light">Contact Us</a></div></section>
+{% endblock %}

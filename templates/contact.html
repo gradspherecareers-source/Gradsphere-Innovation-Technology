@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Contact Us{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><h1>Contact Us</h1><p>Home / Contact Us</p></div></section>
+
+<section class="section"><div class="container two-col">
+  <div>
+    <span class="eyebrow">Get In Touch</span><h2>We’d love to hear from you</h2>
+    <p>Share your requirement and we will respond with a quote within 24 hours.</p>
+    <div class="info"><div>📞</div><p><b>Phone</b><br>{{ site.phone }}</p></div>
+    <div class="info"><div>✉︎</div><p><b>Email</b><br>{{ site.email }}</p></div>
+    <div class="info"><div>🌐</div><p><b>Website</b><br>{{ site.website }}</p></div>
+    <div class="info"><div>📍</div><p><b>Address</b><br>{{ site.address }}</p></div>
+    <div class="info"><div>🕒</div><p><b>Working Hours</b><br>{{ site.hours }}</p></div>
+  </div>
+  <form method="post" class="card form">
+    <h3>Send us a message</h3>
+    <input name="name" placeholder="Your Name *" required>
+    <input type="email" name="email" placeholder="Your Email *" required>
+    <input name="phone" placeholder="Phone Number">
+    
+    <select name="service">
+      <option value="">Select a service</option>
+      <!-- Added spacing / explicit option for Careers -->
+      <option value="careers">Careers - Stand out to recruiters with polished, ATS-friendly career material</option>
+      {% for s in services %}
+        {% if s.title != "Careers" %}
+          <option value="{{ s.title }}">{{ s.title }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+
+    <textarea name="message" rows="5" placeholder="Tell us about your requirement *" required></textarea>
+    <button class="btn" type="submit">Send Message</button>
+  </form>
+</div></section>
+
+<section class="section alt"><div class="container narrow">
+  <div class="heading"><h2>Quick Answers</h2></div>
+  {% for f in faqs %}<details class="faq"><summary>{{ f.q }}</summary><p>{{ f.a }}</p></details>{% endfor %}
+</div></section>
+{% endblock %}

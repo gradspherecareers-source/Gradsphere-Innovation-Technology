@@ -1,0 +1,914 @@
+/* ==========================================================
+   GradSphere Master Stylesheet (Corporate Premium Edition)
+   ========================================================== */
+
+:root {
+  /* Brand Core Colors */
+  --navy: #0F172A;        /* Slate Navy - Deep, trustworthy corporate base */
+  --indigo: #3D4864;      /* Deep Indigo - Primary brand accent (from logo) */
+  --sage: #88976C;        /* Sage Green - Growth, balance & stability */
+  --sage-light: #F2F5EF;  /* Soft Sage Tint - Clean background accents */
+  --gold: #D4AF37;        /* Premium Gold - Featured highlights & badges */
+  
+  /* Interface & Neutral Tones */
+  --bg: #F8FAFC;          /* Clean Neutral Grey Background */
+  --surface: #FFFFFF;     /* Pure White Surface */
+  --text: #1E293B;         /* Dark Slate - High contrast body text */
+  --muted: #475569;        /* Muted Slate - Subtitles & descriptions */
+  --border: #E2E8F0;       /* Subtle Border Lines */
+  --slate-purple: #666379; /* Structural Neutral Tone */
+  
+  /* Modern Elevation Shadows */
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 35px rgba(15, 23, 42, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  background-color: var(--surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+ul {
+  list-style: none;
+}
+
+.container {
+  width: min(1200px, 92%);
+  margin: auto;
+}
+
+.narrow {
+  width: min(820px, 92%);
+}
+
+
+/* ==========================================================
+   Top Bar & Navbar
+   ========================================================== */
+
+.topbar {
+  background: var(--slate-purple);
+  color: #E2E8F0;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 8px 0;
+}
+
+.topbar .container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 76px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo img {
+  width: 170px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+nav > a, .dropdown > a {
+  font-weight: 500;
+  font-size: 15px;
+  padding: 26px 0;
+  color: var(--text);
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+nav a.active, nav > a:hover, .dropdown > a:hover {
+  color: var(--indigo);
+}
+
+nav > a.btn {
+  padding: 9px 22px;
+  color: var(--surface);
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: -20px;
+  background: var(--surface);
+  min-width: 260px;
+  box-shadow: var(--shadow-lg);
+  border-top: 3px solid var(--indigo);
+  display: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu a {
+  display: block;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--text);
+  transition: background 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+  background: var(--bg);
+  color: var(--indigo);
+}
+
+.menu-btn {
+  display: none;
+  background: none;
+  border: 0;
+  font-size: 28px;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+
+/* ==========================================================
+   Buttons
+   ========================================================== */
+
+.btn {
+  display: inline-block;
+  background: var(--indigo);
+  color: var(--surface);
+  padding: 13px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-family: 'Inter', 'Geist', sans-serif;
+  font-size: 15px;
+  border: 2px solid var(--indigo);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(61, 72, 100, 0.25);
+}
+
+.btn:hover {
+  background: var(--navy);
+  border-color: var(--navy);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.3);
+}
+
+.btn-sm {
+  padding: 9px 22px;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--indigo);
+  border-color: var(--indigo);
+  box-shadow: none;
+}
+
+.btn-outline:hover {
+  background: var(--indigo);
+  color: var(--surface);
+}
+
+.btn-outline-dark {
+  background: transparent;
+  color: var(--navy);
+  border-color: var(--navy);
+  box-shadow: none;
+}
+
+.btn-outline-dark:hover {
+  background: var(--navy);
+  color: var(--surface);
+}
+
+.btn-light {
+  background: var(--surface);
+  color: var(--navy);
+  border-color: var(--surface);
+}
+
+.btn-light:hover {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: var(--surface);
+}
+
+
+/* ==========================================================
+   Hero Section
+   ========================================================== */
+
+.hero {
+  background: linear-gradient(135deg, var(--sage-light) 0%, var(--surface) 65%);
+  padding: 90px 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.eyebrow {
+  display: inline-block;
+  color: var(--sage);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.hero h1 {
+  font-size: 46px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 18px;
+  letter-spacing: -0.5px;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.hero-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-img {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-img img {
+  width: 100%;
+  max-width: 600px;
+  height: 380px;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  margin-left: auto;
+}
+
+
+/* ==========================================================
+   Stats & General Sections
+   ========================================================== */
+
+.stats {
+  background: linear-gradient(120deg, var(--navy), var(--indigo));
+  color: var(--surface);
+  padding: 55px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  text-align: center;
+  gap: 20px;
+}
+
+.stats h3 {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.stats p {
+  opacity: 0.9;
+  font-size: 15px;
+}
+
+.section {
+  padding: 90px 0;
+}
+
+.alt {
+  background: var(--bg);
+}
+
+.heading {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 50px;
+}
+
+.heading h2, .two-col h2 {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+}
+
+.heading p {
+  color: var(--muted);
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.card {
+  background: var(--surface);
+  padding: 32px 26px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--sage);
+}
+
+.card h3 {
+  color: var(--navy);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 12px 0 8px;
+}
+
+.card p {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.center {
+  text-align: center;
+}
+
+.icon {
+  font-size: 36px;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: var(--sage-light);
+  color: var(--sage);
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.center .icon {
+  margin: 0 auto 12px;
+}
+
+.ticks li {
+  padding: 8px 0 8px 28px;
+  position: relative;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.ticks li::before {
+  content: "✔";
+  position: absolute;
+  left: 0;
+  color: var(--sage);
+  font-weight: 700;
+}
+
+.ticks.big li {
+  font-size: 16px;
+  padding: 10px 0 10px 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ticks.light li::before {
+  color: var(--gold);
+}
+
+.link {
+  color: var(--indigo);
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 14px;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: var(--navy);
+}
+
+.step {
+  padding: 10px;
+}
+
+.step b {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--sage-light);
+}
+
+.step h3 {
+  color: var(--navy);
+  font-size: 20px;
+}
+
+.step p {
+  color: var(--muted);
+}
+
+.shot {
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.quote {
+  font-style: italic;
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+
+.card small {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mv {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+
+/* ==========================================================
+   FAQ & Timeline
+   ========================================================== */
+
+.faq {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--navy);
+}
+
+.faq p {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.timeline {
+  border-left: 3px solid var(--sage);
+  padding-left: 28px;
+}
+
+.tl-item {
+  margin-bottom: 26px;
+  position: relative;
+}
+
+.tl-item::before {
+  content: "";
+  position: absolute;
+  left: -37px;
+  top: 6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--sage);
+}
+
+.tl-item b {
+  color: var(--indigo);
+  font-size: 20px;
+}
+
+
+/* ==========================================================
+   Page Hero, CTA & Contact Forms
+   ========================================================== */
+
+.page-hero {
+  background: linear-gradient(120deg, var(--navy), var(--indigo));
+  color: var(--surface);
+  padding: 75px 0;
+  text-align: center;
+}
+
+.page-hero h1 {
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.page-hero p {
+  opacity: 0.85;
+  font-size: 17px;
+}
+
+.cta {
+  background: linear-gradient(120deg, var(--indigo), var(--navy));
+  color: var(--surface);
+  text-align: center;
+  padding: 80px 0;
+}
+
+.cta h2 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.cta p {
+  margin-bottom: 28px;
+  opacity: 0.9;
+  font-size: 17px;
+}
+
+.info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.info div {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: var(--sage-light);
+  color: var(--sage);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.form input, .form select, .form textarea {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Inter', 'Geist', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form input:focus, .form select:focus, .form textarea:focus {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px rgba(61, 72, 100, 0.1);
+}
+
+.small {
+  font-size: 14px;
+}
+
+.small a {
+  color: var(--indigo);
+  font-weight: 600;
+}
+
+.flash {
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin: 18px 0;
+  font-weight: 500;
+}
+
+.flash.success {
+  background: #E6F4EA;
+  color: #137333;
+}
+
+.flash.error {
+  background: #FCE8E6;
+  color: #C5221F;
+}
+
+
+/* ==========================================================
+   Authentication Pages (Fixed Input Text Visibility)
+   ========================================================== */
+
+.auth {
+  background: linear-gradient(135deg, var(--sage-light), var(--surface));
+  padding: 85px 0;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.auth-side {
+  background: linear-gradient(135deg, var(--navy), var(--indigo));
+  color: var(--surface);
+  padding: 50px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-side h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.auth-side p {
+  margin-bottom: 20px;
+  opacity: 0.9;
+}
+.auth-side .ticks.light li {
+  color: #FFFFFF; /* Makes list text bright white */
+}
+
+.auth-side .ticks.light li::before {
+  color: var(--gold); /* Keeps the checkmark highlights golden or set to #FFFFFF for solid white */
+}
+
+/* Specific rule to make login form input text clearly visible */
+.auth-grid form.form input,
+.auth-grid form.form select,
+.auth-grid form.form textarea {
+  color: #3D4864; 
+  background: var(--surface);
+}
+
+.auth-grid form.form input:focus,
+.auth-grid form.form select:focus,
+.auth-grid form.form textarea:focus {
+  color: #3D4864;
+  border-color: #3D4864;
+  box-shadow: 0 0 0 3px rgba(61, 72, 100, 0.1);
+}
+
+.auth-grid form.form input::placeholder {
+  color: #A0AEC0;
+}
+
+
+/* ==========================================================
+   Footer
+   ========================================================== */
+
+.footer {
+  background: var(--slate-purple);
+  color: #CBD5E1;
+  padding-top: 64px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.3fr;
+  gap: 36px;
+}
+
+.footer h4 {
+  color: var(--surface);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.footer a {
+  display: block;
+  padding: 5px 0;
+  font-size: 14.5px;
+  transition: color 0.2s ease;
+}
+
+.footer a:hover {
+  color: var(--gold);
+}
+
+.footer p {
+  font-size: 14.5px;
+  margin-bottom: 8px;
+}
+
+.copy {
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  margin-top: 44px;
+  padding: 22px;
+  font-size: 14px;
+  color: #94A3B8;
+}
+/* ==========================================================
+   Careers Service Specific Spacing
+   ========================================================== */
+.career-highlight {
+  margin: 16px 0 22px 0;
+  padding: 12px 16px;
+  background: var(--sage-light);
+  border-left: 4px solid var(--sage);
+  border-radius: 0 8px 8px 0;
+}
+
+.career-tagline {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--navy);
+  margin-bottom: 0 !important;
+}
+
+/* ==========================================================
+   Animations & Responsive Media Queries
+   ========================================================== */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.show {
+  opacity: 1;
+  transform: none;
+}
+/* Add spacing and styling for select options */
+.form select option {
+  padding: 10px 14px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+
+@media(max-width: 960px) {
+  .hero-grid, .two-col, .auth-grid {
+    grid-template-columns: 1fr;
+  }
+  .grid-4, .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hero h1 {
+    font-size: 34px;
+  }
+  .menu-btn {
+    display: block;
+  }
+  nav {
+    display: none;
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 5%;
+    gap: 12px;
+    box-shadow: var(--shadow-lg);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.open {
+    display: flex;
+  }
+  nav > a, .dropdown > a {
+    padding: 6px 0;
+  }
+  .dropdown-menu {
+    display: none !important;
+  }
+  .hero-img img {
+    margin: auto;
+  }
+  .logo img {
+    height: 60px;
+  }
+}
+
+/* ==========================================================
+   Careers Service Alignment & Spacing Fix
+   ========================================================== */
+.service-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.service-content p {
+  margin-bottom: 16px;
+}
+
+.career-tagline {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--navy);
+  background: var(--sage-light);
+  border-left: 4px solid var(--sage);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  width: 100%;
+  margin-bottom: 24px !important;
+}
+
+
+@media(max-width: 560px) {
+  .grid-4, .footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .topbar .container {
+    justify-content: center;
+  }
+}

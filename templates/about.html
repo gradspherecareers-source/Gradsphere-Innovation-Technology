@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}About Us{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><h1>About Us</h1><p>Home / About Us</p></div></section>
+
+<section class="section"><div class="container two-col">
+  <div><span class="eyebrow">Who We Are</span><h2>Empowering Students & Graduates</h2><p>{{ about.intro }}</p>
+    <div class="mv"><div class="card"><h3>🎯 Our Mission</h3><p>{{ about.mission }}</p></div>
+    <div class="card"><h3>🔭 Our Vision</h3><p>{{ about.vision }}</p></div></div></div>
+  <img class="shot" src="{{ url_for('static', filename='images/about.jpg') }}" alt="About GradSphere">
+</div></section>
+
+<section class="stats"><div class="container stats-grid">
+  {% for s in stats %}<div><h3><span class="counter" data-target="{{ s.number }}">0</span>{{ s.suffix }}</h3><p>{{ s.label }}</p></div>{% endfor %}
+</div></section>
+
+<section class="section"><div class="container">
+  <div class="heading"><span class="eyebrow">Our Values</span><h2>What Drives Us</h2></div>
+  <div class="grid-4">{% for v in values %}<div class="card center reveal"><div class="icon">{{ v.icon }}</div><h3>{{ v.title }}</h3><p>{{ v.text }}</p></div>{% endfor %}</div>
+</div></section>
+
+<section class="section alt"><div class="container narrow">
+  <div class="heading"><span class="eyebrow">Our Journey</span><h2>Milestones</h2></div>
+  <div class="timeline">{% for m in milestones %}<div class="tl-item reveal"><b>{{ m.year }}</b><p>{{ m.text }}</p></div>{% endfor %}</div>
+</div></section>
+
+<section class="cta"><div class="container"><h2>Ready to work with us?</h2>
+  <a href="{{ url_for('contact') }}" class="btn btn-light">Get in Touch</a></div></section>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">{{ hero.eyebrow }}</span>
+      <h1>{{ hero.title }}</h1>
+      <p>{{ hero.text }}</p>
+      <div class="hero-btns">
+        <a href="{{ url_for('services_page') }}" class="btn">Explore Services</a>
+        <a href="{{ url_for('contact') }}" class="btn btn-outline">Get a Free Quote</a>
+      </div>
+    </div>
+    <div class="hero-img"><img src="{{ url_for('static', filename='images/THINK.png') }}" alt="GradSphere services"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats"><div class="container stats-grid">
+  {% for s in stats %}
+  <div><h3><span class="counter" data-target="{{ s.number }}">0</span>{{ s.suffix }}</h3><p>{{ s.label }}</p></div>
+  {% endfor %}
+</div></section>
+
+<!-- SERVICES -->
+<section class="section"><div class="container">
+  <div class="heading"><span class="eyebrow">What We Do</span><h2>Our Services</h2>
+    <p>Everything a student or graduate needs, under one roof.</p></div>
+  <div class="grid-4">
+    {% for s in services %}
+    <div class="card reveal">
+      <div class="icon">{{ s.icon }}</div><h3>{{ s.title }}</h3><p>{{ s.desc }}</p>
+      <ul class="ticks">{% for i in s.points[:4] %}<li>{{ i }}</li>{% endfor %}</ul>
+      <a href="{{ url_for('services_page') }}#{{ s.id }}" class="link">Learn more →</a>
+    </div>{% endfor %}
+  </div>
+</div></section>
+
+<!-- WHY US -->
+<section class="section alt"><div class="container">
+  <div class="heading"><span class="eyebrow">Why GradSphere</span><h2>Built on Trust & Quality</h2></div>
+  <div class="grid-4">
+    {% for w in why %}<div class="card center reveal"><div class="icon">{{ w.icon }}</div><h3>{{ w.title }}</h3><p>{{ w.text }}</p></div>{% endfor %}
+  </div>
+</div></section>
+
+<!-- PROCESS -->
+<section class="section"><div class="container">
+  <div class="heading"><span class="eyebrow">How It Works</span><h2>Simple 4-Step Process</h2></div>
+  <div class="grid-4">
+    {% for p in process %}<div class="step reveal"><b>{{ p.step }}</b><h3>{{ p.title }}</h3><p>{{ p.text }}</p></div>{% endfor %}
+  </div>
+</div></section>
+
+<!-- SHOWCASE -->
+<section class="section alt"><div class="container">
+  <div class="heading"><span class="eyebrow">Showcase</span><h2>Our Work at a Glance</h2></div>
+  <div class="grid-3">
+    <img class="shot reveal" src="{{ url_for('static', filename='images/lap.jpg') }}" alt="Services poster 1">
+    <img class="shot reveal" src="{{ url_for('static', filename='images/office.jpg') }}" alt="Services poster 2">
+    <img class="shot reveal" src="{{ url_for('static', filename='images/3d.jpg') }}" alt="Services poster 3">
+  </div>
+</div></section>
+
+<!-- TESTIMONIALS -->
+<section class="section"><div class="container">
+  <div class="heading"><span class="eyebrow">Testimonials</span><h2>What Our Clients Say</h2></div>
+  <div class="grid-3">
+    {% for t in testimonials %}<div class="card reveal"><p class="quote">“{{ t.text }}”</p><b>{{ t.name }}</b><small>{{ t.role }}</small></div>{% endfor %}
+  </div>
+</div></section>
+
+<!-- FAQ -->
+<section class="section alt"><div class="container narrow">
+  <div class="heading"><span class="eyebrow">FAQ</span><h2>Frequently Asked Questions</h2></div>
+  {% for f in faqs %}<details class="faq"><summary>{{ f.q }}</summary><p>{{ f.a }}</p></details>{% endfor %}
+</div></section>
+
+<!-- CTA -->
+<section class="cta"><div class="container">
+  <h2>Let’s Build Your Future, Together.</h2>
+  <p>Talk to us today and get a free quote for your project.</p>
+  <a href="{{ url_for('contact') }}" class="btn btn-light">Contact Us</a>
+</div></section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+{% block content %}
+<section class="auth"><div class="container auth-grid">
+  <div class="auth-side"><h2>Join GradSphere</h2><p>Create a free account to manage all your requests in one place.</p></div>
+  <form method="post" class="card form">
+    <h3>Create Account</h3>
+    <input name="name" placeholder="Full name" required>
+    <input type="email" name="email" placeholder="Email address" required>
+    <input type="password" name="password" placeholder="Password (min 6 characters)" required>
+    <button class="btn" type="submit">Register</button>
+    <p class="small">Already registered? <a href="{{ url_for('login') }}">Login</a></p>
+  </form>
+</div></section>
+{% endblock %}

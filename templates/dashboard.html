@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><h1>Hello, {{ session.user_name }} 👋</h1><p>Client Dashboard</p></div></section>
+<section class="section"><div class="container">
+  <div class="grid-4">
+    {% for s in services %}<div class="card center"><div class="icon">{{ s.icon }}</div><h3>{{ s.title }}</h3>
+      <a href="{{ url_for('contact') }}" class="link">Request →</a></div>{% endfor %}
+  </div>
+  <p style="margin-top:30px"><a href="{{ url_for('logout') }}" class="btn btn-outline-dark">Logout</a></p>
+</div></section>
+{% endblock %}
