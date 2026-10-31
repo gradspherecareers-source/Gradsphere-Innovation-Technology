@@ -52,7 +52,7 @@ FAQS = [
     {"q": "How long does a typical project take?", "a": "Resumes take 1-2 days; reports and documentation usually take 3-7 days depending on size."},
     {"q": "Do you offer revisions?", "a": "Yes. We provide free revisions until you are satisfied with the result."},
     {"q": "Is my information kept confidential?", "a": "Absolutely. Your files are used only for your project and never shared."},
-    {"q": "How do I pay?", "a": "We accept UPI and bank transfer. Details are give your information threw contact page, admin can contact you within 1-2hours."},
+    {"q": "How do I pay?", "a": "We accept UPI and bank transfer. Enter your information threw contact page, admin can contact you within 1-2hours."},
 ]
 
 # ---------- SERVICES ----------
@@ -94,5 +94,5 @@ VALUES = [
 MILESTONES = [  # sample - edit freely
     {"year": "2024", "text": "GradSphere founded with a focus on resumes and project reports."},
     {"year": "2025", "text": "Expanded into logo design, poster design, portfolio website."},
-    {"year": "2026", "text": "Launched complete student support, online client portal and Business suports."}
+    {"year": "2026", "text": "Launched complete student support, online client portal and Business support."}
 ]
