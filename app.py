@@ -19,7 +19,12 @@ import content as c
 # ------------------------- APP INITIALIZATION -------------------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
+
+# Vercel serverless requires using /tmp for SQLite databases since the root is read-only
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    DB_PATH = "/tmp/gradsphere.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
 
 
 # ------------------------- DATABASE -------------------------
@@ -83,7 +88,7 @@ def send_sms(message_text):
             "numbers": "918072806231"  # Your phone number
         }
         headers = {'cache-control': "no-cache"}
-        requests.request("GET", url, headers=headers, params=querystring)
+        requests.request("GET", url, headers=headers, params=querystring, timeout=3)
     except Exception as e:
         print(f"SMS error: {e}")
 
@@ -120,14 +125,17 @@ def contact():
             message_body = f["message"]
 
             # 1. Save to Database
-            db = get_db()
-            db.execute(
-                "INSERT INTO messages(name,email,phone,service,message,created) VALUES(?,?,?,?,?,?)",
-                (name, email, phone, service, message_body, datetime.now().isoformat(timespec="seconds"))
-            )
-            db.commit()
+            try:
+                db = get_db()
+                db.execute(
+                    "INSERT INTO messages(name,email,phone,service,message,created) VALUES(?,?,?,?,?,?)",
+                    (name, email, phone, service, message_body, datetime.now().isoformat(timespec="seconds"))
+                )
+                db.commit()
+            except Exception as db_err:
+                print(f"Database error: {db_err}")
 
-            # 2. Send Email Notification to Inbox
+            # 2. Send Email Notification to Inbox (with timeout & exception handling for serverless)
             try:
                 msg = EmailMessage()
                 msg.set_content(
@@ -143,11 +151,12 @@ def contact():
                 msg["Reply-To"] = email
                 msg["To"] = "gradspherecareers@gmail.com"
 
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                # 5-second timeout prevents Vercel serverless from hanging indefinitely
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5) as server:
                     server.login("gradspherecareers@gmail.com", "ugwpiwtixxrywcgq")
                     server.send_message(msg)
             except Exception as e:
-                print(f"Email error: {e}")
+                print(f"Email error (SMTP blocked on serverless): {e}")
 
             # 3. Send SMS Alert to Phone
             send_sms(f"New Inquiry! Name: {name}, Service: {service}")
@@ -201,7 +210,7 @@ def login():
                 msg["From"] = "gradspherecareers@gmail.com"
                 msg["To"] = "gradspherecareers@gmail.com"
 
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5) as server:
                     server.login("gradspherecareers@gmail.com", "ugwpiwtixxrywcgq")
                     server.send_message(msg)
             except Exception as e:
@@ -229,7 +238,11 @@ def logout():
     return redirect(url_for("home"))
 
 
-init_db()
+# Initialize DB on start (handles /tmp creation on Vercel cold starts)
+try:
+    init_db()
+except Exception as e:
+    print(f"DB Init error: {e}")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
