@@ -5,7 +5,6 @@ import os
 import random
 from datetime import datetime
 from functools import wraps
-import requests
 import resend
 
 from flask import (Flask, render_template, request, redirect,
@@ -16,19 +15,18 @@ import content as c
 
 # ------------------------- APP INITIALIZATION -------------------------
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
+app.secret_key = os.environ.get("SECRET_KEY", "GradSphereSecretKey2026#")
 
-# Configure Resend API Key
-resend.api_key = os.environ.get("RESEND_API_KEY", "re_Fdsf3TX2_6LNsCox1MSPyz2P6UAtRNMEg")
-
-# Professional Sender Name for Startup Feel
-SENDER_EMAIL = "GradSphere Support <onboarding@resend.dev>"
+# Configure Resend API Key from Environment
+resend.api_key = os.environ.get("RESEND_API_KEY")
+# Resend Free Tier strict Sender format
+SENDER_EMAIL = "onboarding@resend.dev"
 
 # Admin Contact Details
 ADMIN_EMAIL = "gradspherecareers@gmail.com"
 ADMIN_PHONE = "+91 7708944301"
 
-# Supabase PostgreSQL Connection URL (Set this in Vercel Environment Variables)
+# Supabase PostgreSQL Connection URL
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
@@ -143,24 +141,6 @@ def login_required(view):
     return wrapped
 
 
-def send_sms(message_text):
-    """Sends SMS notification strictly to the admin's mobile number via Fast2SMS"""
-    try:
-        url = "https://www.fast2sms.com/dev/bulkV2"
-        querystring = {
-            "authorization": "YOUR_FAST2SMS_API_KEY",
-            "route": "q",
-            "message": message_text,
-            "language": "english",
-            "flash": "0",
-            "numbers": "917708944301"  # Admin Mobile Number for SMS Text Only
-        }
-        headers = {'cache-control': "no-cache"}
-        requests.request("GET", url, headers=headers, params=querystring, timeout=3)
-    except Exception as e:
-        print(f"SMS error: {e}")
-
-
 # ------------------------- PUBLIC PAGES -------------------------
 @app.route("/")
 def home():
@@ -201,7 +181,7 @@ def contact():
             except Exception as db_err:
                 print(f"Database error: {db_err}")
 
-            # 2. Send Email Notification to ADMIN via Resend API
+            # 2. Send Email Notification via Resend API
             try:
                 resend.Emails.send({
                     "from": SENDER_EMAIL,
@@ -218,9 +198,6 @@ def contact():
                 })
             except Exception as e:
                 print(f"Resend Email error: {e}")
-
-            # 3. Send SMS Alert
-            send_sms(f"New Inquiry! Name: {name}, Service: {service}")
 
             flash("Thank you! We have received your message and will reply soon.", "success")
             return redirect(url_for("contact"))
@@ -261,7 +238,7 @@ def login():
         if user and check_password_hash(user["password"], request.form.get("password", "")):
             session["user_id"], session["user_name"] = user["id"], user["name"]
             
-            # 1. Send Login Notification to ADMIN via Resend API
+            # Send Login Notification via Resend API
             try:
                 resend.Emails.send({
                     "from": SENDER_EMAIL,
@@ -276,9 +253,6 @@ def login():
                 })
             except Exception as e:
                 print(f"Resend Login Email error: {e}")
-
-            # 2. Send SMS Alert for Login
-            send_sms(f"Login Alert: {user['name']} ({user['email']}) logged in.")
 
             return redirect(url_for("dashboard"))
             
@@ -302,31 +276,30 @@ def forgot_password():
         # Save code in DB
         query_db("UPDATE users SET reset_code=%s WHERE email=%s", (code, email))
         
-        # Send OTP code to BOTH Client Email AND Admin Email so Admin also gets the code!
+        # Send OTP code via Resend
         try:
             resend.Emails.send({
                 "from": SENDER_EMAIL,
-                "to": [email, ADMIN_EMAIL],  # Sent to client AND copied to admin (`gradspherecareers@gmail.com`)
+                "to": ADMIN_EMAIL,  # Resend Free Tier delivers strictly to owner email
                 "subject": f"GradSphere Password Reset OTP for {email}",
                 "html": f"""
                     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
                         <h2 style="color: #4f46e5;">GradSphere Security</h2>
                         <p>Hello,</p>
-                        <p>We received a request to reset the password for account: <strong>{email}</strong></p>
-                        <p>Use the 6-digit verification code below to proceed:</p>
+                        <p>Reset request for account: <strong>{email}</strong></p>
+                        <p>Verification Code:</p>
                         <div style="background: #f3f4f6; padding: 12px 20px; font-size: 24px; font-weight: bold; letter-spacing: 4px; display: inline-block; border-radius: 6px; color: #111;">
                             {code}
                         </div>
-                        <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">If you did not request a password reset, please ignore this email or contact support.</p>
                     </div>
                 """
             })
             session["reset_email"] = email
-            flash("OTP code has been sent to your email!", "success")
+            flash("OTP code has been sent to support email!", "success")
             return redirect(url_for("verify_code"))
         except Exception as e:
             print(f"Resend Error: {e}")
-            flash(f"Email delivery restricted. Please contact Admin at {ADMIN_EMAIL} or call {ADMIN_PHONE}.", "error")
+            flash(f"Email delivery error. Contact Admin at {ADMIN_EMAIL}.", "error")
             
     return render_template("forgot_password.html")
 
@@ -368,23 +341,6 @@ def dashboard():
 
 @app.route("/logout")
 def logout():
-    user_name = session.get("user_name", "User")
-    
-    # Send Logout Notification to ADMIN via Resend API
-    try:
-        resend.Emails.send({
-            "from": SENDER_EMAIL,
-            "to": ADMIN_EMAIL,
-            "subject": f"Logout Alert: {user_name}",
-            "html": f"""
-                <h3>User Logout Alert on GradSphere</h3>
-                <p><strong>User:</strong> {user_name}</p>
-                <p><strong>Logout Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-            """
-        })
-    except Exception as e:
-        print(f"Resend Logout Email error: {e}")
-        
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("home"))
