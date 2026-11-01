@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
 
 # Configure Resend API Key
-resend.api_key = os.environ.get("RESEND_API_KEY")
+resend.api_key = os.environ.get("RESEND_API_KEY", "re_Fdsf3TX2_6LNsCox1MSPyz2P6UAtRNMEg")
 
 # Professional Sender Name for Startup Feel
 SENDER_EMAIL = "GradSphere Support <onboarding@resend.dev>"
@@ -37,8 +37,7 @@ def get_db():
     if "db" not in g:
         if DATABASE_URL:
             import psycopg2
-            import psycopg2.extras
-            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.DictCursor)
+            g.db = psycopg2.connect(DATABASE_URL)
             g.is_postgres = True
         else:
             import sqlite3
@@ -65,7 +64,12 @@ def query_db(query, args=(), one=False):
     if not is_pg:
         query = query.replace("%s", "?")
         
-    cur = db.cursor()
+    if is_pg:
+        import psycopg2.extras
+        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cur = db.cursor()
+        
     cur.execute(query, args)
     
     if query.strip().upper().startswith("SELECT"):
