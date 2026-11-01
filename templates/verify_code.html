@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Verify Code & Reset{% endblock %}
+{% block content %}
+<section class="auth"><div class="container auth-grid">
+  <div class="auth-side">
+    <h2>Verify OTP</h2>
+    <p>Enter the 6-digit code sent to your email and type your new secure password.</p>
+  </div>
+  <form method="post" class="card form">
+    <h3>New Password Setup</h3>
+    <input type="text" name="code" placeholder="Enter 6-digit OTP *" required>
+    <input type="password" name="new_password" placeholder="New Password (min 6 characters) *" required>
+    <button class="btn" type="submit">Update Password</button>
+    <p class="small" style="margin-top: 12px;"><a href="{{ url_for('login') }}">← Back to Login</a></p>
+  </form>
+</div></section>
+{% endblock %}
