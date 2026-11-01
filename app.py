@@ -1,14 +1,12 @@
 """
-GradSphere website - Flask application.
-Run with:  python app.py    then open http://127.0.0.1:5000
+GradSphere website - Flask application with Supabase & SQLite fallback.
 """
 import os
-import sqlite3
+import random
 from datetime import datetime
 from functools import wraps
 import requests
-import smtplib
-from email.message import EmailMessage
+import resend
 
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, g)
@@ -20,18 +18,35 @@ import content as c
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
 
-# Vercel serverless requires using /tmp for SQLite databases since the root is read-only
-if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
-    DB_PATH = "/tmp/gradsphere.db"
-else:
-    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
+# Configure Resend API Key
+resend.api_key = os.environ.get("RESEND_API_KEY")
+
+# Professional Sender Name for Startup Feel
+SENDER_EMAIL = "GradSphere Support <onboarding@resend.dev>"
+
+# Admin Contact Details
+ADMIN_EMAIL = "gradspherecareers@gmail.com"
+ADMIN_PHONE = "+91 7708944301"
+
+# Supabase PostgreSQL Connection URL (Set this in Vercel Environment Variables)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
-# ------------------------- DATABASE -------------------------
+# ------------------------- DATABASE HELPER -------------------------
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
+        if DATABASE_URL:
+            import psycopg2
+            import psycopg2.extras
+            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.DictCursor)
+            g.is_postgres = True
+        else:
+            import sqlite3
+            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            g.db = conn
+            g.is_postgres = False
     return g.db
 
 
@@ -42,26 +57,75 @@ def close_db(_error):
         db.close()
 
 
+def query_db(query, args=(), one=False):
+    """Helper to handle placeholder differences between PostgreSQL (%s) and SQLite (?)"""
+    db = get_db()
+    is_pg = getattr(g, "is_postgres", False)
+    
+    if not is_pg:
+        query = query.replace("%s", "?")
+        
+    cur = db.cursor()
+    cur.execute(query, args)
+    
+    if query.strip().upper().startswith("SELECT"):
+        rv = cur.fetchall()
+        cur.close()
+        return (rv[0] if rv else None) if one else rv
+    else:
+        db.commit()
+        cur.close()
+        return None
+
+
 def init_db():
-    with sqlite3.connect(DB_PATH) as db:
-        db.executescript("""
+    if DATABASE_URL:
+        import psycopg2
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS users(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
+                reset_code TEXT,
                 created TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS messages(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 name TEXT, email TEXT, phone TEXT,
                 service TEXT, message TEXT, created TEXT);
         """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    else:
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
+        with sqlite3.connect(db_path) as db:
+            db.executescript("""
+                CREATE TABLE IF NOT EXISTS users(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL,
+                    reset_code TEXT,
+                    created TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS messages(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT, email TEXT, phone TEXT,
+                    service TEXT, message TEXT, created TEXT);
+            """)
+            try:
+                db.execute("ALTER TABLE users ADD COLUMN reset_code TEXT")
+                db.commit()
+            except sqlite3.OperationalError:
+                pass
 
 
 # ------------------------- HELPERS -------------------------
 @app.context_processor
 def inject_globals():
-    """Variables available in every template."""
     return dict(site=c.SITE, services=c.SERVICES, year=datetime.now().year)
 
 
@@ -76,16 +140,16 @@ def login_required(view):
 
 
 def send_sms(message_text):
-    """Helper function to send SMS via Fast2SMS"""
+    """Sends SMS notification strictly to the admin's mobile number via Fast2SMS"""
     try:
         url = "https://www.fast2sms.com/dev/bulkV2"
         querystring = {
-            "authorization": "YOUR_FAST2SMS_API_KEY",  # <--- Put your Fast2SMS API key here
+            "authorization": "YOUR_FAST2SMS_API_KEY",
             "route": "q",
             "message": message_text,
             "language": "english",
             "flash": "0",
-            "numbers": "918072806231"  # Your phone number
+            "numbers": "917708944301"  # Admin Mobile Number for SMS Text Only
         }
         headers = {'cache-control': "no-cache"}
         requests.request("GET", url, headers=headers, params=querystring, timeout=3)
@@ -126,39 +190,32 @@ def contact():
 
             # 1. Save to Database
             try:
-                db = get_db()
-                db.execute(
-                    "INSERT INTO messages(name,email,phone,service,message,created) VALUES(?,?,?,?,?,?)",
+                query_db(
+                    "INSERT INTO messages(name,email,phone,service,message,created) VALUES(%s,%s,%s,%s,%s,%s)",
                     (name, email, phone, service, message_body, datetime.now().isoformat(timespec="seconds"))
                 )
-                db.commit()
             except Exception as db_err:
                 print(f"Database error: {db_err}")
 
-            # 2. Send Email Notification to Inbox (with timeout & exception handling for serverless)
+            # 2. Send Email Notification to ADMIN via Resend API
             try:
-                msg = EmailMessage()
-                msg.set_content(
-                    f"New Client Inquiry on GradSphere Website:\n\n"
-                    f"Name: {name}\n"
-                    f"Email: {email}\n"
-                    f"Phone: {phone}\n"
-                    f"Service: {service}\n\n"
-                    f"Message:\n{message_body}"
-                )
-                msg["Subject"] = f"New Inquiry: {name} ({email})"
-                msg["From"] = "gradspherecareers@gmail.com"
-                msg["Reply-To"] = email
-                msg["To"] = "gradspherecareers@gmail.com"
-
-                # 5-second timeout prevents Vercel serverless from hanging indefinitely
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5) as server:
-                    server.login("gradspherecareers@gmail.com", "ugwpiwtixxrywcgq")
-                    server.send_message(msg)
+                resend.Emails.send({
+                    "from": SENDER_EMAIL,
+                    "to": ADMIN_EMAIL,
+                    "subject": f"New Inquiry: {name} ({email})",
+                    "html": f"""
+                        <h3>New Client Inquiry on GradSphere Website</h3>
+                        <p><strong>Name:</strong> {name}</p>
+                        <p><strong>Email:</strong> {email}</p>
+                        <p><strong>Phone:</strong> {phone}</p>
+                        <p><strong>Service:</strong> {service}</p>
+                        <p><strong>Message:</strong><br>{message_body}</p>
+                    """
+                })
             except Exception as e:
-                print(f"Email error (SMTP blocked on serverless): {e}")
+                print(f"Resend Email error: {e}")
 
-            # 3. Send SMS Alert to Phone
+            # 3. Send SMS Alert
             send_sms(f"New Inquiry! Name: {name}, Service: {service}")
 
             flash("Thank you! We have received your message and will reply soon.", "success")
@@ -174,16 +231,18 @@ def register():
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        
+        existing_user = query_db("SELECT 1 FROM users WHERE email=%s", (email,), one=True)
+        
         if not name or not email or len(password) < 6:
             flash("Enter name, email and a password of at least 6 characters.", "error")
-        elif get_db().execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
+        elif existing_user:
             flash("This email is already registered. Please log in.", "error")
         else:
-            get_db().execute(
-                "INSERT INTO users(name,email,password,created) VALUES(?,?,?,?)",
+            query_db(
+                "INSERT INTO users(name,email,password,created) VALUES(%s,%s,%s,%s)",
                 (name, email, generate_password_hash(password),
                  datetime.now().isoformat(timespec="seconds")))
-            get_db().commit()
             flash("Account created! You can log in now.", "success")
             return redirect(url_for("login"))
     return render_template("register.html")
@@ -193,28 +252,26 @@ def register():
 def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        user = get_db().execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+        user = query_db("SELECT * FROM users WHERE email=%s", (email,), one=True)
+        
         if user and check_password_hash(user["password"], request.form.get("password", "")):
             session["user_id"], session["user_name"] = user["id"], user["name"]
             
-            # 1. Send Email Notification for Login
+            # 1. Send Login Notification to ADMIN via Resend API
             try:
-                msg = EmailMessage()
-                msg.set_content(
-                    f"User Login Alert on GradSphere:\n\n"
-                    f"Name: {user['name']}\n"
-                    f"Email: {user['email']}\n"
-                    f"Login Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                )
-                msg["Subject"] = f"Login Alert: {user['name']} ({user['email']})"
-                msg["From"] = "gradspherecareers@gmail.com"
-                msg["To"] = "gradspherecareers@gmail.com"
-
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5) as server:
-                    server.login("gradspherecareers@gmail.com", "ugwpiwtixxrywcgq")
-                    server.send_message(msg)
+                resend.Emails.send({
+                    "from": SENDER_EMAIL,
+                    "to": ADMIN_EMAIL,
+                    "subject": f"Login Alert: {user['name']} ({user['email']})",
+                    "html": f"""
+                        <h3>User Login Alert on GradSphere</h3>
+                        <p><strong>Name:</strong> {user['name']}</p>
+                        <p><strong>Email:</strong> {user['email']}</p>
+                        <p><strong>Login Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                    """
+                })
             except Exception as e:
-                print(f"Login Email error: {e}")
+                print(f"Resend Login Email error: {e}")
 
             # 2. Send SMS Alert for Login
             send_sms(f"Login Alert: {user['name']} ({user['email']}) logged in.")
@@ -225,6 +282,80 @@ def login():
     return render_template("login.html")
 
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = query_db("SELECT * FROM users WHERE email=%s", (email,), one=True)
+        
+        if not user:
+            flash("This email is not registered with us.", "error")
+            return redirect(url_for("forgot_password"))
+        
+        # Generate 6-digit random code
+        code = str(random.randint(100000, 999999))
+        
+        # Save code in DB
+        query_db("UPDATE users SET reset_code=%s WHERE email=%s", (code, email))
+        
+        # Send OTP code to BOTH Client Email AND Admin Email so Admin also gets the code!
+        try:
+            resend.Emails.send({
+                "from": SENDER_EMAIL,
+                "to": [email, ADMIN_EMAIL],  # Sent to client AND copied to admin (`gradspherecareers@gmail.com`)
+                "subject": f"GradSphere Password Reset OTP for {email}",
+                "html": f"""
+                    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                        <h2 style="color: #4f46e5;">GradSphere Security</h2>
+                        <p>Hello,</p>
+                        <p>We received a request to reset the password for account: <strong>{email}</strong></p>
+                        <p>Use the 6-digit verification code below to proceed:</p>
+                        <div style="background: #f3f4f6; padding: 12px 20px; font-size: 24px; font-weight: bold; letter-spacing: 4px; display: inline-block; border-radius: 6px; color: #111;">
+                            {code}
+                        </div>
+                        <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">If you did not request a password reset, please ignore this email or contact support.</p>
+                    </div>
+                """
+            })
+            session["reset_email"] = email
+            flash("OTP code has been sent to your email!", "success")
+            return redirect(url_for("verify_code"))
+        except Exception as e:
+            print(f"Resend Error: {e}")
+            flash(f"Email delivery restricted. Please contact Admin at {ADMIN_EMAIL} or call {ADMIN_PHONE}.", "error")
+            
+    return render_template("forgot_password.html")
+
+
+@app.route("/verify-code", methods=["GET", "POST"])
+def verify_code():
+    if "reset_email" not in session:
+        return redirect(url_for("forgot_password"))
+        
+    if request.method == "POST":
+        entered_code = request.form.get("code", "").strip()
+        new_password = request.form.get("new_password", "").strip()
+        
+        if len(new_password) < 6:
+            flash("Password must be at least 6 characters.", "error")
+            return render_template("verify_code.html")
+            
+        email = session["reset_email"]
+        user = query_db("SELECT * FROM users WHERE email=%s", (email,), one=True)
+        
+        if user and user["reset_code"] == entered_code:
+            hashed_pw = generate_password_hash(new_password)
+            query_db("UPDATE users SET password=%s, reset_code=NULL WHERE email=%s", (hashed_pw, email))
+            
+            session.pop("reset_email", None)
+            flash("Password successfully updated! You can log in now.", "success")
+            return redirect(url_for("login"))
+        else:
+            flash("Invalid OTP code. Please try again.", "error")
+            
+    return render_template("verify_code.html")
+
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -233,12 +364,29 @@ def dashboard():
 
 @app.route("/logout")
 def logout():
+    user_name = session.get("user_name", "User")
+    
+    # Send Logout Notification to ADMIN via Resend API
+    try:
+        resend.Emails.send({
+            "from": SENDER_EMAIL,
+            "to": ADMIN_EMAIL,
+            "subject": f"Logout Alert: {user_name}",
+            "html": f"""
+                <h3>User Logout Alert on GradSphere</h3>
+                <p><strong>User:</strong> {user_name}</p>
+                <p><strong>Logout Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            """
+        })
+    except Exception as e:
+        print(f"Resend Logout Email error: {e}")
+        
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("home"))
 
 
-# Initialize DB on start (handles /tmp creation on Vercel cold starts)
+# Initialize DB on start
 try:
     init_db()
 except Exception as e:
