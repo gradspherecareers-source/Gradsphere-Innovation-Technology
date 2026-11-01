@@ -15,10 +15,12 @@ import content as c
 
 # ------------------------- APP INITIALIZATION -------------------------
 app = Flask(__name__)
+app.config["DEBUG"] = True  # Added so live errors show up directly on screen if any occur
 app.secret_key = os.environ.get("SECRET_KEY", "GradSphereSecretKey2026#")
 
-# Configure Resend API Key from Environment
+# Configure Resend API Key from Environment (with local fallback if needed)
 resend.api_key = os.environ.get("RESEND_API_KEY")
+
 # Resend Free Tier strict Sender format
 SENDER_EMAIL = "onboarding@resend.dev"
 
@@ -280,7 +282,7 @@ def forgot_password():
         try:
             resend.Emails.send({
                 "from": SENDER_EMAIL,
-                "to": ADMIN_EMAIL,  # Resend Free Tier delivers strictly to owner email
+                "to": ADMIN_EMAIL,
                 "subject": f"GradSphere Password Reset OTP for {email}",
                 "html": f"""
                     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
