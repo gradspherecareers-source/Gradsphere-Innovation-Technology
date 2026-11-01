@@ -1,51 +1,39 @@
 """
-GradSphere website - Flask application with Supabase & SQLite fallback.
+GradSphere website - Clean Pure SQLite Version (No Supabase needed)
 """
 import os
 import random
 from datetime import datetime
 from functools import wraps
+import sqlite3
 import resend
 
 from flask import (Flask, render_template, request, redirect,
-                   url_for, session, flash, g)
+                    url_for, session, flash, g)
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import content as c
 
 # ------------------------- APP INITIALIZATION -------------------------
 app = Flask(__name__)
-app.config["DEBUG"] = True  # Added so live errors show up directly on screen if any occur
 app.secret_key = os.environ.get("SECRET_KEY", "GradSphereSecretKey2026#")
 
-# Configure Resend API Key from Environment (with local fallback if needed)
-resend.api_key = os.environ.get("RESEND_API_KEY")
-
-# Resend Free Tier strict Sender format
+# Configure Resend API Key from Environment
+resend.api_key = os.environ.get("RESEND_API_KEY") 
 SENDER_EMAIL = "onboarding@resend.dev"
 
 # Admin Contact Details
 ADMIN_EMAIL = "gradspherecareers@gmail.com"
 ADMIN_PHONE = "+91 7708944301"
 
-# Supabase PostgreSQL Connection URL
-DATABASE_URL = os.environ.get("DATABASE_URL")
 
-
-# ------------------------- DATABASE HELPER -------------------------
+# ------------------------- DATABASE HELPER (Pure SQLite) -------------------------
 def get_db():
     if "db" not in g:
-        if DATABASE_URL:
-            import psycopg2
-            g.db = psycopg2.connect(DATABASE_URL)
-            g.is_postgres = True
-        else:
-            import sqlite3
-            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
-            conn = sqlite3.connect(db_path)
-            conn.row_factory = sqlite3.Row
-            g.db = conn
-            g.is_postgres = False
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        g.db = conn
     return g.db
 
 
@@ -57,19 +45,9 @@ def close_db(_error):
 
 
 def query_db(query, args=(), one=False):
-    """Helper to handle placeholder differences between PostgreSQL (%s) and SQLite (?)"""
+    """SQLite helper function"""
     db = get_db()
-    is_pg = getattr(g, "is_postgres", False)
-    
-    if not is_pg:
-        query = query.replace("%s", "?")
-        
-    if is_pg:
-        import psycopg2.extras
-        cur = db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    else:
-        cur = db.cursor()
-        
+    cur = db.cursor()
     cur.execute(query, args)
     
     if query.strip().upper().startswith("SELECT"):
@@ -83,48 +61,26 @@ def query_db(query, args=(), one=False):
 
 
 def init_db():
-    if DATABASE_URL:
-        import psycopg2
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        cur.execute("""
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
+    with sqlite3.connect(db_path) as db:
+        db.executescript("""
             CREATE TABLE IF NOT EXISTS users(
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 reset_code TEXT,
                 created TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS messages(
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT, email TEXT, phone TEXT,
                 service TEXT, message TEXT, created TEXT);
         """)
-        conn.commit()
-        cur.close()
-        conn.close()
-    else:
-        import sqlite3
-        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gradsphere.db")
-        with sqlite3.connect(db_path) as db:
-            db.executescript("""
-                CREATE TABLE IF NOT EXISTS users(
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    password TEXT NOT NULL,
-                    reset_code TEXT,
-                    created TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS messages(
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT, email TEXT, phone TEXT,
-                    service TEXT, message TEXT, created TEXT);
-            """)
-            try:
-                db.execute("ALTER TABLE users ADD COLUMN reset_code TEXT")
-                db.commit()
-            except sqlite3.OperationalError:
-                pass
+        try:
+            db.execute("ALTER TABLE users ADD COLUMN reset_code TEXT")
+            db.commit()
+        except sqlite3.OperationalError:
+            pass
 
 
 # ------------------------- HELPERS -------------------------
@@ -174,16 +130,16 @@ def contact():
             service = f.get("service", "General")
             message_body = f["message"]
 
-            # 1. Save to Database
+            # 1. Save to Local SQLite Database
             try:
                 query_db(
-                    "INSERT INTO messages(name,email,phone,service,message,created) VALUES(%s,%s,%s,%s,%s,%s)",
+                    "INSERT INTO messages(name,email,phone,service,message,created) VALUES(?,?,?,?,?,?)",
                     (name, email, phone, service, message_body, datetime.now().isoformat(timespec="seconds"))
                 )
             except Exception as db_err:
                 print(f"Database error: {db_err}")
 
-            # 2. Send Email Notification via Resend API
+            # 2. Send Email Notification via Resend API to Admin
             try:
                 resend.Emails.send({
                     "from": SENDER_EMAIL,
@@ -215,7 +171,7 @@ def register():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         
-        existing_user = query_db("SELECT 1 FROM users WHERE email=%s", (email,), one=True)
+        existing_user = query_db("SELECT 1 FROM users WHERE email=?", (email,), one=True)
         
         if not name or not email or len(password) < 6:
             flash("Enter name, email and a password of at least 6 characters.", "error")
@@ -223,7 +179,7 @@ def register():
             flash("This email is already registered. Please log in.", "error")
         else:
             query_db(
-                "INSERT INTO users(name,email,password,created) VALUES(%s,%s,%s,%s)",
+                "INSERT INTO users(name,email,password,created) VALUES(?,?,?,?)",
                 (name, email, generate_password_hash(password),
                  datetime.now().isoformat(timespec="seconds")))
             flash("Account created! You can log in now.", "success")
@@ -235,12 +191,12 @@ def register():
 def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        user = query_db("SELECT * FROM users WHERE email=%s", (email,), one=True)
+        user = query_db("SELECT * FROM users WHERE email=?", (email,), one=True)
         
         if user and check_password_hash(user["password"], request.form.get("password", "")):
             session["user_id"], session["user_name"] = user["id"], user["name"]
             
-            # Send Login Notification via Resend API
+            # Send Login Notification via Resend API to Admin
             try:
                 resend.Emails.send({
                     "from": SENDER_EMAIL,
@@ -266,7 +222,7 @@ def login():
 def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
-        user = query_db("SELECT * FROM users WHERE email=%s", (email,), one=True)
+        user = query_db("SELECT * FROM users WHERE email=?", (email,), one=True)
         
         if not user:
             flash("This email is not registered with us.", "error")
@@ -276,9 +232,9 @@ def forgot_password():
         code = str(random.randint(100000, 999999))
         
         # Save code in DB
-        query_db("UPDATE users SET reset_code=%s WHERE email=%s", (code, email))
+        query_db("UPDATE users SET reset_code=? WHERE email=?", (code, email))
         
-        # Send OTP code via Resend
+        # Send OTP code via Resend to Admin
         try:
             resend.Emails.send({
                 "from": SENDER_EMAIL,
@@ -320,11 +276,11 @@ def verify_code():
             return render_template("verify_code.html")
             
         email = session["reset_email"]
-        user = query_db("SELECT * FROM users WHERE email=%s", (email,), one=True)
+        user = query_db("SELECT * FROM users WHERE email=?", (email,), one=True)
         
         if user and user["reset_code"] == entered_code:
             hashed_pw = generate_password_hash(new_password)
-            query_db("UPDATE users SET password=%s, reset_code=NULL WHERE email=%s", (hashed_pw, email))
+            query_db("UPDATE users SET password=?, reset_code=NULL WHERE email=?", (hashed_pw, email))
             
             session.pop("reset_email", None)
             flash("Password successfully updated! You can log in now.", "success")
